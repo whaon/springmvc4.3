@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	">
+	<aop:aspectj-autoproxy />
+	<context:component-scan base-package="com.my">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+	
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+	        <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+	            <property name="objectMapper" ref="objectMapper"/>
+	        </bean>
+	        <bean class="org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter">
+	            <property name="objectMapper" ref="xmlMapper"/>
+	        </bean>
+	    </mvc:message-converters>
+	</mvc:annotation-driven>
+	<mvc:default-servlet-handler/>
+	
+	<!-- 日期格式化，注解的日期会覆盖该配置@JsonFormat -->
+	<bean id="objectMapper" class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean"
+      p:indentOutput="true"
+      p:simpleDateFormat="yyyy-MM"
+      />
+      
+      <bean id="xmlMapper" parent="objectMapper" p:createXmlMapper="true" p:simpleDateFormat="yyyy"/>
+
+	<!-- 默认有，使用覆盖 -->
+	<!-- <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">  
+        <property name="viewClass" value="org.springframework.web.servlet.view.InternalResourceView" />  
+        <property name="prefix" value="/WEB-INF/jsp/" />  
+        <property name="suffix" value=".html" />  
+    </bean>  -->
+    
+    <!-- The ContentNegotiatingViewResolver does not resolve views itself but rather delegates to other view resolvers -->
+    <!-- <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+    	<property name="order" value="1" />  
+        <property name="contentNegotiationManager">  
+            <bean class="org.springframework.web.accept.ContentNegotiationManager">  
+                <constructor-arg>  
+                    <bean class="org.springframework.web.accept.PathExtensionContentNegotiationStrategy">  
+                        <constructor-arg>  
+                            <map>  
+                                <entry key="json" value="application/json"/>  
+                                <entry key="xml" value="application/xml"/>  
+                            </map>  
+                        </constructor-arg>  
+                    </bean>  
+                </constructor-arg>  
+            </bean>  
+        </property>  
+	    <property name="viewResolvers">
+	        <list>
+	            <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+	            	<property name="order" value="5"/>  
+	            </bean> 
+	            <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	            	<property name="order" value="10"/>  
+	                <property name="prefix" value="/WEB-INF/jsp/"/>
+	                <property name="suffix" value=".html"/>
+	            </bean>
+	        </list>
+	    </property>
+	    <property name="defaultViews">
+	        <list>
+	            <bean class="org.springframework.web.servlet.view.xml.MappingJackson2XmlView"/>
+				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView"  />
+	        </list>
+	    </property>
+	</bean> -->
+
+	<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" id="myjson" name="myjson"/>
+	<mvc:view-resolvers>
+		
+		<mvc:bean-name >
+			<property name="order" value="-6"/>  
+		</mvc:bean-name>
+		<!-- <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+	            	<property name="order" value="0"/>  
+	            </bean>  -->
+		<mvc:jsp prefix="/WEB-INF/jsp/" suffix=".html" />
+		
+		<!-- <mvc:content-negotiation>
+			<mvc:default-views>
+				<ref bean="myjson"/>
+			</mvc:default-views>
+		</mvc:content-negotiation> -->
+	</mvc:view-resolvers>
+	
+	<!--  <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	            	<property name="order" value="10"/>  
+	                <property name="prefix" value="/WEB-INF/jsp/"/>
+	                <property name="suffix" value=".html"/>
+	            </bean> -->
+	
+</beans>

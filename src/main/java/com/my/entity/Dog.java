@@ -2,7 +2,7 @@ package com.my.entity;
 
 import java.util.Date;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Dog {
 	public Dog() {
@@ -11,8 +11,8 @@ public class Dog {
 	String name;
 	int age;
 	
-	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm") // spring的注解
-	//@JsonFormat(pattern="yyyy-MM-dd HH",timezone = "GMT+8")  // 由于使用jackson的json和xml，所以都会生效
+	//@DateTimeFormat(pattern="yyyy-MM-dd HH:mm") // spring的注解
+	@JsonFormat(pattern="yyyy-MM-dd HH",timezone = "GMT+8")  // 由于使用jackson的json和xml，所以都会生效
 	Date birth;
 	
 	

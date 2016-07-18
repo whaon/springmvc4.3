@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
@@ -24,7 +25,12 @@ import com.my.entity.Dog;
 @RequestMapping("/rest")
 public class Rest {
 
-	@RequestMapping("/test")
+	// consumes限制Content-Type 
+	// produces限制Accept
+	
+	// HiddenHttpMethodFilter是正对浏览器不支持PUT的方式，现在主流浏览器都支持了
+	// HttpPutFormContentFilter，只是用来取得PUT时请求提中的参数
+	@RequestMapping(value="/test", produces="text/html")
 	@ResponseBody
 	public ResponseEntity<Dog> test(@RequestParam(required=false) String var, Dog dog) {
 		System.out.println(var);
@@ -34,8 +40,22 @@ public class Rest {
 		d.setName("doggy");
 		
 		//ResponseEntity<Dog> r = new ResponseEntity<Dog>(d, HttpStatus.MOVED_PERMANENTLY);
-		ResponseEntity<Dog> r = ResponseEntity.accepted().body(d);
+		ResponseEntity<Dog> r = ResponseEntity.ok().body(d);
 		return r;
+	}
+	
+	// @PutMapping
+	// method={RequestMethod.GET, RequestMethod.POST}
+	// @RequestBody(required=false)
+	@RequestMapping(value="/t2", method={RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT})
+	@ResponseBody
+	public Dog test(@RequestBody(required=false) Map name,@RequestParam(required=false) String la) {
+		System.out.println(name + "\n" + la);
+		Dog d = new Dog();
+		d.setBirth(new Date());
+		d.setName("doggy");
+		
+		return d;
 	}
 	
 	@RequestMapping("/request")

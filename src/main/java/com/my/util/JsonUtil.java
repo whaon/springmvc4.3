@@ -1,168 +1,116 @@
 package com.my.util;
 
-/**
- * @(#)JsonUtil.java 2013-7-11
- * 
- * Copyright 2000-2013 by ChinanetCenter Corporation.
- *
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * ChinanetCenter Corporation ("Confidential Information").  You
- * shall not disclose such Confidential Information and shall use
- * it only in accordance with the terms of the license agreement
- * you entered into with ChinanetCenter.
- */
-
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.JSONSerializer;
-import com.alibaba.fastjson.serializer.ObjectSerializer;
-import com.alibaba.fastjson.serializer.SerializeWriter;
-import com.alibaba.fastjson.serializer.SerializerFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
-/**
- * mapper for json <-> java bean 
- * 
- * @author 刘圳
- * @since 2013-7-11
- */
-public abstract class JsonUtil {
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.my.entity.Dog;
 
-	/**
-	 * fastjosn的ClassSerializer, 在输出null值的时没有判断, 会有问题
-	 * @author sinlang
-	 * @date 2014年7月2日
-	 */
-	public static class ClassSerializer implements ObjectSerializer {
+public final class JsonUtil {
+	private static Logger logger = LoggerFactory.getLogger(JsonUtil.class);
 
-		public final static ClassSerializer instance = new ClassSerializer();
+	private static ObjectMapper mapper;
 
-		@SuppressWarnings("rawtypes")
-		public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType)
-				throws IOException {
-			SerializeWriter out = serializer.getWriter();
-
-			if (object == null) {
-				out.writeNull();
-			}
-			else {
-				Class clazz = (Class) object;
-				out.writeString(clazz.getName());
-			}
-		}
+	static {
+		mapper = new ObjectMapper();
+		
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		mapper.setDateFormat(dateFormat);
+		
+		mapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+		mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+		mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+		mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+		mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+		
+		//mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 	}
 
-	/**
-	 * json序列化成字符串
-	 * @param message
-	 * @param prettyFormat 是否使用格式化
-	 * @param withType 是否写入类型
-	 * @return
-	 */
-	public static String toText(Object message, boolean prettyFormat, boolean withType) {
-		SerializeWriter out = new SerializeWriter();
+	public static <T> T fromJson(String jsonString, Class<T> clazz) {
+		if (StringUtils.isEmpty(jsonString)) {
+			return null;
+		}
+
 		try {
-			JSONSerializer serializer = new JSONSerializer(out);
-			serializer.getMapping().getGlobalInstance().put(Class.class, ClassSerializer.instance);
-			serializer.config(SerializerFeature.WriteMapNullValue, true);
-			if (prettyFormat) {
-				serializer.config(SerializerFeature.PrettyFormat, true);
-			}
-			if (withType) {
-				serializer.config(SerializerFeature.WriteClassName, true);
-			}
-			serializer.write(message);
-
-			return out.toString();
+			return mapper.readValue(jsonString, clazz);
 		}
-		finally {
-			out.close();
+		catch (IOException e) {
+			logger.error("parse json string error:" + jsonString, e);
+			return null;
 		}
 	}
 
-	/**
-	 * 将json转换成list数组，数组内元素类型相同，需提供数组元素类型
-	 * 
-	 * @param text json字符串
-	 * @param clazz 数组元素类型
-	 * @return
-	 */
-	public static <T> List<T> parseArray(String text, Class<T> clazz) {
-		return JSON.parseArray(text, clazz);
+	public static <T> T fromJson(String jsonString, Class<?> parametrized, Class<?>... parameterClasses) {
+		if (StringUtils.isEmpty(jsonString)) {
+			return null;
+		}
+
+		try {
+			JavaType javaType = mapper.getTypeFactory().constructParametricType(parametrized, parameterClasses);
+			return mapper.readValue(jsonString, javaType);
+		}
+		catch (IOException e) {
+			logger.warn("parse json string error:" + jsonString, e);
+			return null;
+		}
 	}
 
-	/**
-	 * 将json转换成list数组，数组内元素类型可以不同, 必须分别由types指定
-	 * @param input
-	 * @param types
-	 * @return
-	 */
-	public List<?> parseArray(String input, Class<?>[] types) {
-		return JSON.parseArray(input, types);
+	public static String toJson(Object object) {
+
+		try {
+			return mapper.writeValueAsString(object);
+		}
+		catch (IOException e) {
+			logger.error("write to json string error:" + object, e);
+			return null;
+		}
 	}
 
-	/**
-	 * 把message对象转换成json字符串
-	 * @param message
-	 * @return
-	 */
-	public static String toText(Object message) {
-		return toText(message, false, false);
+    public static String toFormatJson(Object object) {
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+        }
+        catch (IOException e) {
+            logger.error("write to json string error:" + object, e);
+            return null;
+        }
+    }
+
+	public static String fixJsonFormat(String data) {
+		try {
+			if (data.indexOf("'") != -1 && data.indexOf("\"") == -1) {
+				return data.replaceAll("'", "\"");
+			}
+			return data;
+		}
+		catch (Exception e) {
+			return data;
+		}
 	}
-
-	/**
-	 * 把message对象转换成json字符串
-	 * @param message
-	 * @return
-	 */
-	public static String toPrettyText(Object message) {
-
-		return toText(message, true, false);
+	
+	public static boolean isJsonString(String data) {
+		try {
+			mapper.readValue(data, Object.class);
+			return true;
+		}
+		catch (Exception e) {
+			return false;
+		}
 	}
-
-	/**
-	 * 把message对象转换成json字符串, 对象带有java类名
-	 * @param message
-	 * @return
-	 */
-	public static String toTextWithType(Object message) {
-		return toText(message, false, true);
-	}
-
-	public static String toTextWithTypePretty(Object message) {
-		return toText(message, true, true);
-	}
-
-	/**
-	 * 把字符串转换成java对象
-	 * @param input
-	 * @return
-	 */
-	public static Object parse(String input) {
-		return JSON.parse(input);
-	}
-
-	/**
-	 * 把字符串转换成java对象, 并指定放回值对象
-	 * @param input
-	 * @return
-	 */
-	public static <T> T parse(String input, Class<T> type) {
-		return JSON.parseObject(input, type);
-	}
-
-	public static <T> T clone(T object, Class<T> type) {
-		String text = toTextWithType(object);
-		return (T) parse(text, type);
-	}
-
-	public static <T> T clone(T object) {
-		String text = toTextWithType(object);
-		return (T) parse(text);
+	
+	public static void main(String[] args) {
+		String jsonString = "{\"name\":\"doggy\",\"age\":0,\"birth\":\"2016-2-3 11:05:06\"}";
+		Dog map = JsonUtil.fromJson(jsonString, Dog.class);
+		System.out.println(map);
+		
+		System.out.println(JsonUtil.toJson(map));
+		System.out.println(JsonUtil.toFormatJson(map));
 	}
 }
-

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="http://code.jquery.com/jquery-3.1.0.min.js"></script>
+</head>
+<script type="text/javascript">
+$(function() {
+	// dataType会修改Accept头
+	// contentType即是Content-Type，默认是application/x-www-form-urlencoded，即都会转成?a=b这样的参数，如果不希望转，需要明确设置
+	// 尤其是在http body中
+	// 服务端会根据Accept来返回不同类型的值
+	
+	
+	// 加入了jackson包后，会根据accept来返回不同格式,对于输入参数也会自动转换
+	var o = {name:"tom",age:20,weigth:88.8}; //JSON.stringify(o),
+	o = JSON.stringify(o);
+	//alert(JSON.stringify(o));
+	//o = '<a>t</a>';
+$.ajax({
+	   type: "PUT",
+	   url: "rest/t2?la=ca",
+	   data: o,
+	   processData: true,
+	   
+	   contentType: "application/xml",
+	   //accepts: "*/*",
+	   //headers: {'Accept': 'application/xml'},
+	   dataType: "json",
+	   //accepts: "text/plain;charset=UTF-8",
+	   //data: "name=John&location=Boston",
+	   success: function(msg){
+	     //alert( "Data Saved: " + msg );
+	     $('#j').text(msg)
+	   }
+	});
+	
+});
+
+</script>
+<body>
+<div id="j"></div>
+</body>
+</html>
